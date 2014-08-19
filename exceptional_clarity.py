@@ -20,6 +20,15 @@ PREPEND_STR = "<EXCEPTIONALCLARITY>"
 # IndentationError: doesn't come through, it looks like IPython captures it?
 # SyntaxError: invalid syntax  doesn't come through either?
 
+# To add
+# use an escape fn rather than hand-escaping the rules!
+# "hello" + 42
+# bad imports?
+# bad method name?
+# missing arguments to fn?
+# missing self arg in class?
+# could we suggest corrected name?
+
 PATTERN_ZERO_DIVISION = ".*ZeroDivisionError.*"
 RESPONSE_ZERO_DIVISION = "ZeroDivisionErrors mean you divided by zero (e.g. 1/0), maybe you did that as a test but it is a naughty mathematical thingy to do"
 
