@@ -5,6 +5,8 @@ import re
 
 previous_traceback = None
 
+PREPEND_STR = "<EXCEPTIONALCLARITY>"
+
 # consider autopep8 module for checking bad syntax e.g.
 # autopep8.check_syntax("if True\nprint(2)") -> False
 # autopep8.check_syntax("if True:\n  print(2)") -> code object (i.e. code is
@@ -41,12 +43,12 @@ patterns = [(PATTERN_ZERO_DIVISION, RESPONSE_ZERO_DIVISION),
 
 def print_exception_message(exc_message):
     """Print a guide to the human about the error"""
-    print("<CLARIFICATION>:", exc_message)
+    print(PREPEND_STR + ":", exc_message)
 
 
 def unrecognised_exception(message):
     """We didn't recognise this exception so let the user know to file a bug"""
-    print("This exception is NOT RECOGNISED, please file it as a bug: ", repr(message))
+    print(PREPEND_STR + " This exception is NOT RECOGNISED, please file it as a bug: ", repr(message))
 
 
 def parse_last_exception(message):
@@ -74,17 +76,18 @@ def unregister():
 
 
 if __name__ == "__main__":
+    print("Loaded " + PREPEND_STR + " extension")
     try:
         ip = get_ipython()
     except NameError as err:
-        print("We couldn't execute `get_ipython()`, you have to run this from IPython")
+        print(PREPEND_STR + " We couldn't execute `get_ipython()`, you have to run this from IPython")
         sys.exit()
 
     # http://ipython.org/ipython-doc/dev/api/generated/IPython.core.events.html
     try:
         ip.events.register("post_run_cell", help_with_exception)
     except AttributeError as err:
-        print("Cannot register a post-run callback, maybe your version of IPython is too old?")
+        print(PREPEND_STR + " Cannot register a post-run callback, maybe your version of IPython is too old?")
         print("Here's the raw exception message {}".format(repr(err)))
         print("This script has quit gracefully, it cannot be activated")
         sys.exit()
