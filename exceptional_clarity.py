@@ -88,6 +88,6 @@ if __name__ == "__main__":
         ip.events.register("post_run_cell", help_with_exception)
     except AttributeError as err:
         print(PREPEND_STR + " Cannot register a post-run callback, maybe your version of IPython is too old?")
-        print("Here's the raw exception message {}".format(repr(err)))
-        print("This script has quit gracefully, it cannot be activated")
+        print(PREPEND_STR + " Here's the raw exception message {}".format(repr(err)))
+        print(PREPEND_STR + " This script has quit gracefully, it cannot be activated")
         sys.exit()
