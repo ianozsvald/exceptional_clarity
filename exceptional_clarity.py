@@ -29,18 +29,38 @@ PREPEND_STR = "<EXCEPTIONALCLARITY>"
 # missing self arg in class?
 # could we suggest corrected name?
 
+def escape(s):
+    """Make string more regular expression friendly"""
+    s = s.replace("(", "\(")
+    s = s.replace(")", "\)")
+    return s
+
+
+# 1/0
+# ZeroDivisionError: division by zero
+# "ZeroDivisionError('division by zero',)"
 PATTERN_ZERO_DIVISION = ".*ZeroDivisionError.*"
 RESPONSE_ZERO_DIVISION = "ZeroDivisionErrors mean you divided by zero (e.g. 1/0), maybe you did that as a test but it is a naughty mathematical thingy to do"
 
-PATTERN_TYPE_ERROR = """.*TypeError\("Can't convert 'NoneType' object to str implicitly.*"""
+# None+"hello"
+# TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
+# 'TypeError("unsupported operand type(s) for +: \'NoneType\' and \'str\'",)'
+#PATTERN_TYPE_ERROR = """.*TypeError\("Can't convert 'NoneType' object to str implicitly.*"""
+PATTERN_TYPE_ERROR = """.*TypeError("Can't convert 'NoneType' object to str implicitly.*"""
 RESPONSE_TYPE_ERROR = "You did something that tries to convert None (the NoneType) into a string and this isn't allowed. First you probably want to understand what has type None in your expression"
 
 # e.g. try 'a=22; a/""'
 # -> TypeError("unsupported operand type(s) for /: 'int' and 'str'",)
-PATTERN_TYPE_ERROR_2_TYPES = """TypeError\("unsupported operand type\(s\) for .*: '.*' and '.*'","""
+# 'TypeError("unsupported operand type(s) for /: \'int\' and \'str\'",)'
+#PATTERN_TYPE_ERROR_2_TYPES = """TypeError\("unsupported operand type\(s\) for .*: '.*' and '.*'","""
+PATTERN_TYPE_ERROR_2_TYPES = """TypeError("unsupported operand type(s) for .*: '.*' and '.*'.*"""
 RESPONSE_TYPE_ERROR_2_TYPES = """You tried to do an operation on two types that don't allow that operation, are you sure you're doing something sensible?"""
 
-PATTERN_NAME_ERROR = """NameError\("name \'.*\' is not defined"""
+# print(b)
+# NameError: name 'b' is not defined
+# 'NameError("name \'b\' is not defined",)'
+#PATTERN_NAME_ERROR = """NameError\("name \'.*\' is not defined"""
+PATTERN_NAME_ERROR = """NameError("name '.*' is not defined.*"""
 RESPONSE_NAME_ERROR = "You've referenced a name (probably a variable) that doesn't exist in this namespace, did you mis-spell it?"
 
 # patterns are sub-string matches in the error message
@@ -49,6 +69,8 @@ patterns = [(PATTERN_ZERO_DIVISION, RESPONSE_ZERO_DIVISION),
             (PATTERN_NAME_ERROR, RESPONSE_NAME_ERROR),
             (PATTERN_TYPE_ERROR_2_TYPES, RESPONSE_TYPE_ERROR_2_TYPES)]
 
+# escape the patterns
+patterns = [(escape(pattern), response) for (pattern, response) in patterns]
 
 def print_exception_message(exc_message):
     """Print a guide to the human about the error"""
@@ -100,3 +122,7 @@ if __name__ == "__main__":
         print(PREPEND_STR + " Here's the raw exception message {}".format(repr(err)))
         print(PREPEND_STR + " This script has quit gracefully, it cannot be activated")
         sys.exit()
+
+    # update last traceback if one has occurred recently
+    if 'last_traceback' in dir(sys):
+        previous_traceback = sys.last_traceback
