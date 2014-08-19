@@ -26,54 +26,65 @@ PREPEND_STR = "<EXCEPTIONALCLARITY>"
 # bad imports?
 # bad method name?
 # missing arguments to fn?
+# IndexError: list index out of range
 # missing self arg in class?
 # could we suggest corrected name?
-
-def escape(s):
-    """Make string more regular expression friendly"""
-    s = s.replace("(", "\(")
-    s = s.replace(")", "\)")
-    return s
+# capturing sys.last_type (e.g. TypeError) and sys.last_value.args (e.g. "can
+# only concatenate ...") might be saner?
 
 
 # 1/0
-# ZeroDivisionError: division by zero
-# "ZeroDivisionError('division by zero',)"
+# -> ZeroDivisionError: division by zero
 PATTERN_ZERO_DIVISION = ".*ZeroDivisionError.*"
-RESPONSE_ZERO_DIVISION = "ZeroDivisionErrors mean you divided by zero (e.g. 1/0), maybe you did that as a test but it is a naughty mathematical thingy to do"
+RESPONSE_ZERO_DIVISION = "ZeroDivisionErrors mean you divided by zero (e.g. 1/0), this is defined as an illegal mathematical operation. Did you really mean to divide by 0?"
 
-# None+"hello"
-# TypeError: unsupported operand type(s) for +: 'NoneType' and 'str'
-# 'TypeError("unsupported operand type(s) for +: \'NoneType\' and \'str\'",)'
-#PATTERN_TYPE_ERROR = """.*TypeError\("Can't convert 'NoneType' object to str implicitly.*"""
-PATTERN_TYPE_ERROR = """.*TypeError("Can't convert 'NoneType' object to str implicitly.*"""
-RESPONSE_TYPE_ERROR = "You did something that tries to convert None (the NoneType) into a string and this isn't allowed. First you probably want to understand what has type None in your expression"
+# "Hello"+None
+# -> TypeError: Can't convert 'NoneType' object to str implicitly
+PATTERN_TYPE_ERROR = """.*TypeError\("Can't convert 'NoneType' object to (.*) implicitly.*"""
+RESPONSE_TYPE_ERROR = """You did something that tries to convert None (the NoneType) into a {} and this isn't allowed.
+First you probably want to understand what has type None in your expression, then consider if you're expecting that object to have a None type"""
 
-# e.g. try 'a=22; a/""'
+# 'a=22; a/""'
 # -> TypeError("unsupported operand type(s) for /: 'int' and 'str'",)
-# 'TypeError("unsupported operand type(s) for /: \'int\' and \'str\'",)'
-#PATTERN_TYPE_ERROR_2_TYPES = """TypeError\("unsupported operand type\(s\) for .*: '.*' and '.*'","""
-PATTERN_TYPE_ERROR_2_TYPES = """TypeError("unsupported operand type(s) for .*: '.*' and '.*'.*"""
-RESPONSE_TYPE_ERROR_2_TYPES = """You tried to do an operation on two types that don't allow that operation, are you sure you're doing something sensible?"""
+PATTERN_TYPE_ERROR_2_TYPES = """TypeError\("unsupported operand type\(s\) for (.*): '(.*)' and '(.*)'.*"""
+RESPONSE_TYPE_ERROR_2_TYPES = """You tried to do the operation {} on two types {} and {} that don't allow that operation, are you sure you're doing something sensible?"""
 
 # print(b)
+# -> NameError: name 'b' is not defined
+PATTERN_NAME_ERROR = """NameError\("name '(.*)' is not defined.*"""
+RESPONSE_NAME_ERROR = "You've referenced name {} that doesn't exist in this namespace, did you mis-spell it?"
+
+# [][0] or l=[0,1,2]; l[3]
+PATTERN_LIST_INDEX_ERROR = """IndexError\('list index out of range'.*"""
+RESPONSE_LIST_INDEX_ERROR = """You've indexed outside of the range of the list, use len(your_list) to get the length and index between 0 and len(your_list)-1"""
+
+# 'TypeError("Can\'t convert \'NoneType\' object to str implicitly",)'
+#PATTERN_TYPE_ERROR = """.*TypeError("Can't convert 'NoneType' object to str implicitly.*"""
+#RESPONSE_TYPE_ERROR = """You did something that tries to convert None (the NoneType) into a string and this isn't allowed.
+#First you probably want to understand what has type None in your expression, then consider if you're expecting that object to have a None type"""
+
+# 'TypeError("unsupported operand type(s) for /: \'int\' and \'str\'",)'
+#PATTERN_TYPE_ERROR_2_TYPES = """TypeError("unsupported operand type(s) for .*: '.*' and '.*'.*"""
+#RESPONSE_TYPE_ERROR_2_TYPES = """You tried to do an operation on two types that don't allow that operation, are you sure you're doing something sensible?"""
+
 # NameError: name 'b' is not defined
 # 'NameError("name \'b\' is not defined",)'
-#PATTERN_NAME_ERROR = """NameError\("name \'.*\' is not defined"""
-PATTERN_NAME_ERROR = """NameError("name '.*' is not defined.*"""
-RESPONSE_NAME_ERROR = "You've referenced a name (probably a variable) that doesn't exist in this namespace, did you mis-spell it?"
+#PATTERN_NAME_ERROR = """NameError("name '(.*)' is not defined.*"""
+#RESPONSE_NAME_ERROR = "You've referenced a name (probably a variable) that doesn't exist in this namespace, did you mis-spell it?"
 
 # patterns are sub-string matches in the error message
 patterns = [(PATTERN_ZERO_DIVISION, RESPONSE_ZERO_DIVISION),
             (PATTERN_TYPE_ERROR, RESPONSE_TYPE_ERROR),
             (PATTERN_NAME_ERROR, RESPONSE_NAME_ERROR),
-            (PATTERN_TYPE_ERROR_2_TYPES, RESPONSE_TYPE_ERROR_2_TYPES)]
-
+            (PATTERN_TYPE_ERROR_2_TYPES, RESPONSE_TYPE_ERROR_2_TYPES),
+            (PATTERN_LIST_INDEX_ERROR, RESPONSE_LIST_INDEX_ERROR)
+            ]
 # escape the patterns
-patterns = [(escape(pattern), response) for (pattern, response) in patterns]
+#patterns = [(escape(pattern), response) for (pattern, response) in patterns]
 
-def print_exception_message(exc_message):
+def print_exception_message(exc_message, items_found):
     """Print a guide to the human about the error"""
+    exc_message = exc_message.format(*items_found)
     print(PREPEND_STR + ":", exc_message)
 
 
@@ -85,8 +96,10 @@ def unrecognised_exception(message):
 def parse_last_exception(message):
     """Try to match this message to our patterns to print something helpful"""
     for pattern, response in patterns:
-        if re.findall(pattern, repr(message)):
-            print_exception_message(response)
+        items_found = re.findall(pattern, repr(message))
+        if items_found:
+            #print("FOUND", items_found)
+            print_exception_message(response, items_found[0])
             break
     else:
         unrecognised_exception(message)
